@@ -262,7 +262,7 @@ def survey():
             </div>
         </body>
         </html>
-        ''', active_id=active_id, last_id=last_id)
+        ''')
 
     # Process the survey as normal if last_id < active_id
     if request.method == 'POST':
@@ -271,7 +271,7 @@ def survey():
         selected_opinion = request.form.get('answer')  # The selected radio button value
 
         # Retrieve the last chart ID from the session
-        last_chart_id = session.get('last_id', 'N/A')
+        last_id = session.get('last_id', 'N/A')
 
         # If no opinion is selected, return to the survey page (though HTML form already prevents empty selection)
         if not selected_opinion:
@@ -283,13 +283,17 @@ def survey():
 
         # Prepare the data to store in session.csv without the timestamp
         session_id = session['session_id']
-        session_data = [session_id, name, last_chart_id, selected_opinion]
+        session_data = [session_id, name, last_id, selected_opinion]
+
+        logging.info("user %s sent its upinion",name)
+
 
         # Append the data to session.csv
         with csv_lock_session:  # Acquire the lock to prevent concurrent read/write
             with open('session.csv', mode='a', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
                 writer.writerow(session_data)
+                logging.info("new inserted data: %s",session_data)
 
         # Update the session's last_id after submission
         session['last_id'] = str(int(last_id) + 1)  # Increment last_id by 1
@@ -300,9 +304,6 @@ def survey():
 
     # Retrieve the name from the session
     name = session['name']
-    
-    # Get the last ID from the session (if it exists)
-    last_id = session.get('last_id', 0) 
 
     # Get the row corresponding to the last_id
     data = read_csv_data()
@@ -315,8 +316,9 @@ def survey():
     # Filter out empty keys
     options = [option for option in options if option.strip()]
 
+    # Update the session's last_id after showing
     session['last_id'] = str(int(active_id))
-
+    
     # Display the survey page
     return render_template_string('''
     <!DOCTYPE html>
@@ -460,7 +462,7 @@ def chart():
         else:
             # If the key is not in grouped_data, keep the original value
             updated_raw_data.append(key)  # Keep the key
-            updated_raw_data.append(value)  # Keep the original value
+            updated_raw_data.append(0)  # Keep the original value
 
         i += 2  # Move to the next key-value pair
     
@@ -481,7 +483,7 @@ def chart():
     labels, values = [], []
 
     # Process the key-value pairs in updated_raw_data
-    for i in range(0, len(raw_data) - 1, 2):  # Process key-value pairs
+    for i in range(len(raw_data) - 2, -1, -2):  # Start from the end and move backward
         key, value = raw_data[i], raw_data[i + 1]
 
         if pd.isna(key) or pd.isna(value) or not key.strip() or not value.strip():
@@ -524,19 +526,24 @@ def chart():
     ax.spines['right'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
 
+    #logging.info("Labels List: %s", labels) 
+
     # Add text labels for keys and values
-    for i, (label, value) in enumerate(zip(labels, values)):
-        ax.text(-0.1, i, label, va='center', ha='right', fontsize=12, color='black')  # Key on the left
-        ax.text(bar_widths[i] + 0.02, i, str(int(value)), va='center', fontsize=12)  # Value on the right
+    for i in range(len(labels)):
+        label = labels[i]
+        value = values[i]
+        
+        # Place the key label on the left side of the bar
+        ax.text(-0.1, i, label, va='center', ha='right', fontsize=12, color='black')
+        
+        # Place the value label on the right side of the bar
+        ax.text(bar_widths[i] + 0.02, i, str(int(value)), va='center', fontsize=24)
 
     # Save the chart as an image without border
     img = io.BytesIO()
     plt.savefig(img, format='png', bbox_inches='tight', pad_inches=0)  # Remove border
     img.seek(0)
     img_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
-
-    # Store the last ID in the session
-    session['last_id'] = str(row_id + 1)  # Save the ID of the chart row in session
 
     # Close the figure to avoid excessive memory usage
     plt.close(fig)
@@ -551,7 +558,7 @@ def chart():
     </head>
     <body>
         <h1>{{ title }}</h1>
-        <img src="data:image/png;base64,{{ img_base64 }}" alt="Chart" style="width:75%; height:auto;"/>
+        <img src="data:image/png;base64,{{ img_base64 }}" alt="Chart" style="width:85%; height:auto;"/>
     </body>
     </html>
     '''
