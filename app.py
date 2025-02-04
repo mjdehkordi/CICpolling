@@ -462,7 +462,7 @@ def chart():
         else:
             # If the key is not in grouped_data, keep the original value
             updated_raw_data.append(key)  # Keep the key
-            updated_raw_data.append(0)  # Keep the original value
+            updated_raw_data.append("0")  # Keep the original value
 
         i += 2  # Move to the next key-value pair
     
