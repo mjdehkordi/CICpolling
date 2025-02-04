@@ -52,6 +52,7 @@ def before_request():
 csv_lock_data = threading.Lock()
 csv_lock_session = threading.Lock()
 csv_lock_user = threading.Lock()
+csv_lock_active = threading.Lock()
 
 def read_csv_data():
     # Read CSV while handling uneven columns 
@@ -430,9 +431,20 @@ def chart():
     # Retrieve the 'id' from the GET parameter and store it
     row_id = int(request.args.get('id', 1)) - 1  # Convert ID to zero-based index
     
-    # Store the ID into the active.csv file
-    with open('active.csv', 'w') as active_file:
-        active_file.write(str(row_id + 1))  # Store the 1-based ID
+    # Read the current active ID from the file
+    try:
+        with open('active.csv', 'r') as active_file:
+            current_active_id = int(active_file.read().strip())
+    except (FileNotFoundError, ValueError):
+        current_active_id = 0  # Default to 0 if the file is missing or has invalid data
+
+    # Update the active ID only if it is lower than row_id + 1
+    new_active_id = row_id + 1
+    if current_active_id < new_active_id:
+        with csv_lock_active:
+            with open('active.csv', 'w') as active_file:
+                active_file.write(str(new_active_id))  # Store the updated ID
+
     
     grouped_data = count_records_in_session(row_id)
     
