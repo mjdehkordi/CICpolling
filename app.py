@@ -99,31 +99,35 @@ def login():
             }
             .container {
                 text-align: center;
-                padding: 20px;
+                padding: 40px; /* Increased padding */
                 background-color: white;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                border-radius: 8px;
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Increased shadow */
+                border-radius: 16px; /* Increased border radius */
+                font-size: 2em; /* Increased font size */
             }
             h1 {
                 color: #333;
+                font-size: 2em; /* Increased font size */
             }
             form {
-                margin-top: 20px;
+                margin-top: 40px; /* Increased margin */
             }
             input[type="text"] {
-                padding: 10px;
-                width: 200px;
-                margin: 10px 0;
-                border: 1px solid #ccc;
-                border-radius: 4px;
+                padding: 20px; /* Increased padding */
+                width: 400px; /* Increased width */
+                margin: 20px 0; /* Increased margin */
+                border: 2px solid #ccc; /* Increased border thickness */
+                border-radius: 8px; /* Increased border radius */
+                font-size: 1em; /* Increased font size */
             }
             input[type="submit"] {
-                padding: 10px 20px;
+                padding: 20px 40px; /* Increased padding */
                 background-color: #4CAF50;
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: 8px; /* Increased border radius */
                 cursor: pointer;
+                font-size: 1em; /* Increased font size */
             }
             input[type="submit"]:hover {
                 background-color: #45a049;
@@ -237,17 +241,18 @@ def survey():
                 }
                 .container {
                     text-align: center;
-                    padding: 20px;
+                    padding: 40px; /* Increased padding */
                     background-color: white;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                    border-radius: 8px;
-                    width: 400px;
+                    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Increased shadow */
+                    border-radius: 16px; /* Increased border radius */
+                    width: 800px; /* Increased width */
                 }
                 h1 {
                     color: #333;
+                    font-size: 48px; /* Increased font size */
                 }
                 p {
-                    font-size: 18px;
+                    font-size: 36px; /* Increased font size */
                 }
             </style>
         </head>
@@ -331,40 +336,43 @@ def survey():
             }
             .container {
                 text-align: center;
-                padding: 20px;
+                padding: 40px; /* Increased padding */
                 background-color: white;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-                border-radius: 8px;
-                width: 400px;
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Increased shadow */
+                border-radius: 16px; /* Increased border radius */
+                width: 800px; /* Increased width */
             }
             h1 {
                 color: #333;
+                font-size: 48px; /* Increased font size */
             }
             form {
-                margin-top: 20px;
+                margin-top: 40px; /* Increased margin */
                 text-align: left;
             }
             .question {
-                margin-bottom: 20px;
-                font-size: 18px;
+                margin-bottom: 40px; /* Increased margin */
+                font-size: 36px; /* Increased font size */
                 font-weight: bold;
             }
             .options {
-                margin: 10px 0;
+                margin: 20px 0; /* Increased margin */
             }
             .option-item {
-                margin-bottom: 15px; /* Add space between radio button lines */
+                margin-bottom: 30px; /* Increased margin */
             }
             input[type="radio"] {
-                margin-right: 10px;
+                margin-right: 20px; /* Increased margin */
+                transform: scale(2); /* Increased radio button size */
             }
             input[type="submit"] {
-                padding: 10px 20px;
+                padding: 20px 40px; /* Increased padding */
                 background-color: #4CAF50;
                 color: white;
                 border: none;
-                border-radius: 4px;
+                border-radius: 8px; /* Increased border radius */
                 cursor: pointer;
+                font-size: 36px; /* Increased font size */
             }
             input[type="submit"]:hover {
                 background-color: #45a049;
@@ -383,7 +391,7 @@ def survey():
                     {% for option in options %}
                     <div class="option-item"> <!-- Add a class to each radio button line -->
                         <input type="radio" id="{{ option }}" name="answer" value="{{ option }}" required>
-                        <label for="{{ option }}">{{ option }}</label>
+                        <label for="{{ option }}" style="font-size: 36px;">{{ option }}</label> <!-- Increased font size -->
                     </div>
                     {% endfor %}
                 </div>
@@ -543,7 +551,7 @@ def chart():
     </head>
     <body>
         <h1>{{ title }}</h1>
-        <img src="data:image/png;base64,{{ img_base64 }}" alt="Chart"/>
+        <img src="data:image/png;base64,{{ img_base64 }}" alt="Chart" style="width:75%; height:auto;"/>
     </body>
     </html>
     '''
