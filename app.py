@@ -583,16 +583,16 @@ def chart():
     if max_value == 0:
         max_value = 1  # Fallback value to avoid zero division
     # Set larger figure size and remove the border
-    fig, ax = plt.subplots(figsize=(12, 6))  # Increased panel size
+    fig, ax = plt.subplots(figsize=(10, 5))  # Increased panel size
 
     # Generate colors dynamically
     colors = plt.cm.Paired(np.linspace(0, 1, len(labels)))
     
     # Draw horizontal bars with a fixed panel size
-    bar_widths = [v / max_value * 0.8 for v in values]  # Scale bars dynamically
+    bar_widths = [v / max_value * 0.6 for v in values]  # Scale bars dynamically
 
     y_positions = range(len(labels))
-    ax.barh(y_positions, bar_widths, color=colors)
+    ax.barh(y_positions, bar_widths, color=colors, height=0.3)
 
     # Remove x and y axis labels and borders
     ax.set_xticks([])
@@ -612,10 +612,10 @@ def chart():
         value = values[i]
         
         # Place the key label on the left side of the bar
-        ax.text(-0.1, i, label, va='center', ha='right', fontsize=12, color='black')
+        ax.text(-0.2 , i + 0.25, label, va='center', ha='left', fontsize=16, color='black', fontweight='bold')
         
         # Place the value label on the right side of the bar
-        ax.text(bar_widths[i] + 0.02, i, str(int(value)), va='center', fontsize=24)
+        ax.text(bar_widths[i] + 0.02, i, str(int(value)), va='center', fontsize=18)
 
     # Save the chart as an image without border
     img = io.BytesIO()
