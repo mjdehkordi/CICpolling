@@ -18,11 +18,13 @@ app.secret_key = 'your_secret_key'  # Set a secret key for session management
 # Configure logging to print to the console
 logging.basicConfig(level=logging.INFO)  # Log messages at INFO level
 
-# Flag to check if initialization has been done
-initialized = False
+# Global flag to track if session has been cleared
+session_cleared = False
 
 # Function to initialize active.csv and clear session.csv
 def initialize_files():
+    global session_cleared  # Use the global variable
+        
     # Set 0 in active.csv
     with open('active.csv', 'w') as active_file:
         active_file.write('0')  # Writing 0 to the active.csv file
@@ -37,17 +39,19 @@ def initialize_files():
         with open('users.csv', 'w') as session_file:
             session_file.truncate(0)  # Clearing the file content
 
-    
-    # Clear Flask session storage
-    session.clear()
-            
-# Run this on application startup using a flag
+    # Mark session as not cleared yet
+    session_cleared = False
+
+# Flask route to initialize session storage **only once**
 @app.before_request
-def before_request():
-    global initialized
-    if not initialized:
-        initialize_files()
-        initialized = True
+def clear_session():
+    global session_cleared  # Use the global variable
+    
+    if not session_cleared:
+        session.clear()
+        session.modified = True
+        logging.info("session cleared")
+        session_cleared = True  # Ensure it runs only once
 
 csv_lock_data = threading.Lock()
 csv_lock_session = threading.Lock()
@@ -72,7 +76,6 @@ def login():
         name = request.form['name']
         session['name'] = name
         session['last_id'] = 0  # Initialize last_id to 0 after login
-
         # Save the username in users.csv
         file_exists = os.path.exists('users.csv')  # Check if file exists
         with csv_lock_user:
@@ -157,7 +160,18 @@ def users():
         with open('users.csv', mode='r', encoding='utf-8') as file:
             reader = csv.reader(file)
             users_list = [row[0] for row in reader if row]
+    # Retrieve active ID from active.csv
+    try:
+        with open('active.csv', 'r') as active_file:
+            active_id = int(active_file.read().strip())  # Read and parse active ID
+    except FileNotFoundError:
+        active_id = 0  # Default to 0 if the file is missing
 
+    # Determine whether to auto-refresh
+    should_refresh = active_id == 0  # True if active_id is 0, otherwise False
+
+
+    
     user_count = len(users_list)
     users_text = ", ".join(users_list) if users_list else "No users logged in"
 
@@ -166,7 +180,9 @@ def users():
     <!DOCTYPE html>
     <html>
     <head>
-        <meta http-equiv="refresh" content="3">
+        {% if should_refresh %}
+            <meta http-equiv="refresh" content="3">
+        {% endif %}
         <title>Users</title>
         <style>
             body {
@@ -201,8 +217,7 @@ def users():
         </div>
     </body>
     </html>
-    ''', user_count=user_count, users_text=users_text)
-
+    ''', user_count=user_count, users_text=users_text, should_refresh=should_refresh)
 
 
 @app.route('/survey', methods=['GET', 'POST'])
@@ -285,9 +300,6 @@ def survey():
         # Prepare the data to store in session.csv without the timestamp
         session_id = session['session_id']
         session_data = [session_id, name, last_id, selected_opinion]
-
-        logging.info("user %s sent its upinion",name)
-
 
         # Append the data to session.csv
         with csv_lock_session:  # Acquire the lock to prevent concurrent read/write
@@ -447,7 +459,10 @@ def chart():
 
     
     grouped_data = count_records_in_session(row_id)
-    
+    # Determine whether to auto-refresh
+    should_refresh = current_active_id <= new_active_id
+
+   
     # Now proceed with the rest of your logic
     data = read_csv_data()
 
@@ -457,6 +472,28 @@ def chart():
     row = data[row_id]
     chart_title = row[0]  # First column is the chart title
     raw_data = row[1:]  # Remaining columns contain key-value pairs
+
+    if chart_title == "Do you have any question?":
+        extracted_names = []
+
+        try:
+            with open('session.csv', mode='r', encoding='utf-8') as file:
+                reader = csv.reader(file)
+
+                for row in reader:
+                    if len(row) >= 4 and row[2].strip() == str(new_active_id) and row[3].strip().lower() == "yes":
+                        extracted_names.append(row[1].strip())  # Second column (name)
+            
+            # Format as "1- xxx, 2- yyy, ..."
+            formatted_names = [f"{i+1}- {name}" for i, name in enumerate(extracted_names)]
+        except FileNotFoundError:
+            app.logger.error("session.csv not found.")
+            data = []  # Set empty data if file is missing
+        except Exception as e:
+            app.logger.error(f"Error reading session.csv: {e}")
+            formatted_names = []
+    else:
+        formatted_names = []
 
     labels, values = [], []
     updated_raw_data = []
@@ -538,7 +575,6 @@ def chart():
     ax.spines['right'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
 
-    #logging.info("Labels List: %s", labels) 
 
     # Add text labels for keys and values
     for i in range(len(labels)):
@@ -565,17 +601,24 @@ def chart():
     <!DOCTYPE html>
     <html>
     <head>
-        <meta http-equiv="refresh" content="3">
+        {% if should_refresh %}
+            <meta http-equiv="refresh" content="3">
+        {% endif %}
         <title>Chart</title>
     </head>
     <body>
         <h1>{{ title }}</h1>
-        <img src="data:image/png;base64,{{ img_base64 }}" alt="Chart" style="width:85%; height:auto;"/>
+        <img src="data:image/png;base64,{{ img_base64 }}" alt="Chart" style="height:auto;"/>
+        {% if formatted_names %}
+            <p> <strong> {{ formatted_names | join(', ') }} </strong> </p>
+        {% endif %}
     </body>
     </html>
     '''
-    return render_template_string(html, title=chart_title, img_base64=img_base64)
+    return render_template_string(html, title=chart_title, img_base64=img_base64, should_refresh=should_refresh, formatted_names=formatted_names)
+
 
 if __name__ == '__main__':
+    initialize_files()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
