@@ -463,7 +463,7 @@ def count_records_in_session(row_id):
         return grouped_data
 
 
-@app.route('/chart')
+@app.route('/chart', methods=['GET'])
 def chart():
     # Retrieve the 'id' from the GET parameter and store it
     row_id = int(request.args.get('id', 1)) - 1  # Convert ID to zero-based index
@@ -477,15 +477,20 @@ def chart():
 
     # Update the active ID only if it is lower than row_id + 1
     new_active_id = row_id + 1
-    if current_active_id < new_active_id:
-        with csv_lock_active:
-            with open('active.csv', 'w') as active_file:
-                active_file.write(str(new_active_id))  # Store the updated ID
 
     
     grouped_data = count_records_in_session(row_id)
     # Determine whether to auto-refresh
-    should_refresh = current_active_id <= new_active_id
+    should_refresh = current_active_id >= new_active_id
+
+    if current_active_id < new_active_id:
+        start_button_html = '''
+            <form id="startForm" method="POST">
+                <button type="submit" id="startBtn">Start</button>
+            </form>
+        '''
+    else:
+        start_button_html = ''
 
    
     # Now proceed with the rest of your logic
@@ -633,14 +638,34 @@ def chart():
     </head>
     <body>
         <h1>{{ title }}</h1>
+        {{ start_button_html | safe }}
         <img src="data:image/png;base64,{{ img_base64 }}" alt="Chart" style="height:auto;"/>
         {% if formatted_names %}
-            <p> <strong> {{ formatted_names | join(', ') }} </strong> </p>
+            <p><strong>{{ formatted_names | join(', ') }}</strong></p>
         {% endif %}
     </body>
     </html>
     '''
-    return render_template_string(html, title=chart_title, img_base64=img_base64, should_refresh=should_refresh, formatted_names=formatted_names)
+    return render_template_string(html, title=chart_title, img_base64=img_base64, 
+                                  should_refresh=should_refresh, formatted_names=formatted_names,
+                                  start_button_html=start_button_html)
+
+@app.route('/chart', methods=['POST'])
+def start_action():
+    row_id = int(request.args.get('id', 1)) - 1
+    new_active_id = row_id + 1
+
+    # Save the new active ID to 'active.csv'
+    try:
+        with csv_lock_active:
+            with open('active.csv', 'w') as active_file:
+                active_file.write(str(new_active_id))  # Store the updated ID
+    except Exception as e:
+        app.logger.error(f"Error saving active ID: {e}")
+        return "Error saving active ID", 500
+
+    # Redirect to the same page (GET request) to hide the button and show the updated content
+    return redirect(url_for('chart', id=row_id + 1))
 
 
 if __name__ == '__main__':
