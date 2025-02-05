@@ -93,8 +93,10 @@ def read_csv_data():
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
+    session.clear()  # Clears all session data
     # Show the login page where the user can enter their name
     if request.method == 'POST':
+
         # Save the user's name in the session
         name = request.form['name']
         session['name'] = name
