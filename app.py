@@ -496,8 +496,8 @@ def chart():
     # Now proceed with the rest of your logic
     data = read_csv_data()
 
-    if row_id < 0 or row_id >= len(data):
-        return "Invalid chart ID"
+    if row_id < 1 or row_id >= len(data):
+        return f"Invalid chart ID: {row_id}"
 
     row = data[row_id]
     chart_title = row[0]  # First column is the chart title
