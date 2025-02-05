@@ -39,6 +39,8 @@ def initialize_files():
         with open('users.csv', 'w') as session_file:
             session_file.truncate(0)  # Clearing the file content
 
+    normalize_csv_with_comma('data.csv')
+
     # Mark session as not cleared yet
     session_cleared = False
 
@@ -58,15 +60,36 @@ csv_lock_session = threading.Lock()
 csv_lock_user = threading.Lock()
 csv_lock_active = threading.Lock()
 
+def normalize_csv_with_comma(file_path):
+    # Read the CSV file
+    with open(file_path, 'r', newline='', encoding='utf-8') as file:
+        reader = csv.reader(file)
+        lines = list(reader)
+
+    # Find the maximum number of columns
+    max_columns = max(len(row) for row in lines if row)  # Avoid empty rows
+
+    # Normalize each row to have the same number of columns
+    normalized_lines = []
+    for row in lines:
+        if row:  # Skip empty lines
+            # Append commas to rows with fewer columns
+            while len(row) < max_columns:
+                row.append('')  # Append empty string, this will result in a comma when written
+            normalized_lines.append(row)
+
+    # Write the normalized CSV back to the file, removing any empty lines
+    with open(file_path, 'w', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+        for row in normalized_lines:
+            if row:  # Skip entirely empty rows
+                writer.writerow(row)
+                
 def read_csv_data():
     # Read CSV while handling uneven columns 
     with open('data.csv', 'r', encoding='utf-8') as file:
         lines = [line.strip().split(',') for line in file.readlines()]
-    # Find max number of columns and pad each row accordingly
-    max_columns = max(len(row) for row in lines)
-    normalized_data = [row + [''] * (max_columns - len(row)) for row in lines]
-    
-    return normalized_data
+    return lines
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
