@@ -667,6 +667,22 @@ def start_action():
     # Redirect to the same page (GET request) to hide the button and show the updated content
     return redirect(url_for('chart', id=row_id + 1))
 
+@app.route('/activate', methods=['GET'])
+def start_action():
+    row_id = int(request.args.get('id', 1)) - 1
+    new_active_id = row_id + 1
+
+    # Save the new active ID to 'active.csv'
+    try:
+        with csv_lock_active:
+            with open('active.csv', 'w') as active_file:
+                active_file.write(str(new_active_id))  # Store the updated ID
+    except Exception as e:
+        app.logger.error(f"Error saving active ID: {e}")
+        return "Error saving active ID", 500
+
+    # Redirect to the same page (GET request) to hide the button and show the updated content
+    return redirect(url_for('chart', id=row_id + 1))
 
 if __name__ == '__main__':
     initialize_files()
