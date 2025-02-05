@@ -668,7 +668,7 @@ def start_action():
     return redirect(url_for('chart', id=row_id + 1))
 
 @app.route('/activate', methods=['GET'])
-def start_action():
+def activate():
     row_id = int(request.args.get('id', 1)) - 1
     new_active_id = row_id + 1
 
@@ -681,8 +681,7 @@ def start_action():
         app.logger.error(f"Error saving active ID: {e}")
         return "Error saving active ID", 500
 
-    # Redirect to the same page (GET request) to hide the button and show the updated content
-    return redirect(url_for('chart', id=row_id + 1))
+    return "OK", 200
 
 if __name__ == '__main__':
     initialize_files()
