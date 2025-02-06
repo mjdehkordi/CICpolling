@@ -336,8 +336,12 @@ def survey():
         # Update the session's last_id after submission
         session['last_id'] = str(int(last_id) + 1)  # Increment last_id by 1
 
-        # Redirect back to the survey page (or wherever appropriate)
-        return redirect(url_for('survey'))
+        # Check if logout was triggered
+        if request.form.get('logout_trigger'):
+            return redirect(url_for('logout'))
+        else:
+            # Redirect back to the survey page (or wherever appropriate)
+            return redirect(url_for('survey'))
 
 
     # Retrieve the name from the session
@@ -356,6 +360,8 @@ def survey():
 
     # Update the session's last_id after showing
     session['last_id'] = str(int(active_id))
+
+
     
     # Display the survey page
     return render_template_string('''
@@ -426,7 +432,7 @@ def survey():
                 <div class="question">
                     <p>{{ chart_title }}</p>  <!-- Display chart title as the question -->
                 </div>
-
+                {{logout_trigger}} 
                 <div class="options">
                     {% for option in options %}
                     <div class="option-item"> <!-- Add a class to each radio button line -->
@@ -435,7 +441,9 @@ def survey():
                     </div>
                     {% endfor %}
                 </div>
-
+                {% if chart_title == "Do you have any question?" %}
+                    <input type="hidden" name="logout_trigger" value="1">
+                {% endif %}
                 <input type="submit" value="Submit">
             </form>
         </div>
@@ -480,19 +488,11 @@ def chart():
 
     
     grouped_data = count_records_in_session(row_id)
+    
     # Determine whether to auto-refresh
-    should_refresh = current_active_id >= new_active_id
+    should_refresh = current_active_id + 2 >= new_active_id and new_active_id + 2 >= current_active_id
 
-    if current_active_id < new_active_id:
-        start_button_html = '''
-            <form id="startForm" method="POST">
-                <button type="submit" id="startBtn">Start</button>
-            </form>
-        '''
-    else:
-        start_button_html = ''
-
-   
+     
     # Now proceed with the rest of your logic
     data = read_csv_data()
 
@@ -638,7 +638,6 @@ def chart():
     </head>
     <body>
         <h1>{{ title }}</h1>
-        {{ start_button_html | safe }}
         <img src="data:image/png;base64,{{ img_base64 }}" alt="Chart" style="height:auto;"/>
         {% if formatted_names %}
             <p><strong>{{ formatted_names | join(', ') }}</strong></p>
@@ -647,41 +646,77 @@ def chart():
     </html>
     '''
     return render_template_string(html, title=chart_title, img_base64=img_base64, 
-                                  should_refresh=should_refresh, formatted_names=formatted_names,
-                                  start_button_html=start_button_html)
+                                  should_refresh=should_refresh, formatted_names=formatted_names)
 
-@app.route('/chart', methods=['POST'])
-def start_action():
-    row_id = int(request.args.get('id', 1)) - 1
-    new_active_id = row_id + 1
-
-    # Save the new active ID to 'active.csv'
-    try:
-        with csv_lock_active:
-            with open('active.csv', 'w') as active_file:
-                active_file.write(str(new_active_id))  # Store the updated ID
-    except Exception as e:
-        app.logger.error(f"Error saving active ID: {e}")
-        return "Error saving active ID", 500
-
-    # Redirect to the same page (GET request) to hide the button and show the updated content
-    return redirect(url_for('chart', id=row_id + 1))
 
 @app.route('/activate', methods=['GET'])
 def activate():
-    row_id = int(request.args.get('id', 1)) - 1
-    new_active_id = row_id + 1
-
-    # Save the new active ID to 'active.csv'
+    new_active_id = int(request.args.get('id', 1))
+    
     try:
-        with csv_lock_active:
-            with open('active.csv', 'w') as active_file:
-                active_file.write(str(new_active_id))  # Store the updated ID
-    except Exception as e:
-        app.logger.error(f"Error saving active ID: {e}")
-        return "Error saving active ID", 500
+        with open('active.csv', 'r') as active_file:
+            current_active_id = int(active_file.read().strip())
+    except (FileNotFoundError, ValueError):
+        current_active_id = 0  # Default to 0 if the file is missing or has invalid data
+
+        
+    # Save the new active ID to 'active.csv'
+    if new_active_id>current_active_id:
+        try:
+            with csv_lock_active:
+                with open('active.csv', 'w') as active_file:
+                    active_file.write(str(new_active_id))  # Store the updated ID
+        except Exception as e:
+            app.logger.error(f"Error saving active ID: {e}")
+            return "Error saving active ID", 500
 
     return "OK", 200
+
+@app.route('/logout')
+def logout():
+    """Logs out the user by clearing the session and redirects to login page after 10 seconds."""
+    session.clear()  # Remove all session data
+    return render_template_string('''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Logout</title>
+        <meta http-equiv="refresh" content="10;url={{ url_for("login") }}">  <!-- Redirect after 10 seconds -->
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 0;
+                background-color: #f4f4f9;
+            }
+            .container {
+                text-align: center;
+                padding: 40px;
+                background-color: white;
+                box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+                border-radius: 16px;
+                width: 800px;
+            }
+            h1 {
+                color: #333;
+                font-size: 48px;
+            }
+            p {
+                font-size: 36px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Thank you for participating in this survey</h1>
+        </div>
+    </body>
+    </html>
+    ''')
+
 
 if __name__ == '__main__':
     initialize_files()
