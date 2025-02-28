@@ -1,4 +1,6 @@
 chart name,key1,0,key2,0,key3,0,,0,,0
 What kind of refreshment do you prefer in roundtable meetings?,Cake,1,Coffee,0,Fruits,0,All of them,0,,0
-Have you recently changed your workspace location in CIC? If yes do you like this change?,No,0,Yes - I like it,0,Yes - I don't like it,1,,0,,0
+Would you be interested in establishing an Electric Shoe Cleaner in the NRC building?,No,0,Yes,0,No preference,1,,0,,0
+Which hash algorithm is more secure for storing passwords?,SHA-256,0,MD5,0,bcrypt,0,NTLM,0,,0
+Which hash algorithm requires a key to calculate the message digest?,HMAC,0,PBKDF2,0,AES,0,All of them,0,,0
 Do you have any question?,Yes,1,No,0,,0,,0,,0
