@@ -670,7 +670,7 @@ def activate():
             app.logger.error(f"Error saving active ID: {e}")
             return "Error saving active ID", 500
 
-    return "OK", 200
+    return redirect(url_for('chart', id=new_active_id))
 
 @app.route('/logout')
 def logout():

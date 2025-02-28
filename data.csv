@@ -1,4 +1,4 @@
 chart name,key1,0,key2,0,key3,0,,0,,0
-What kind of refreshment do you prefer in roundtable meetings?,Cake,0,Coffee,1,Fruits,0,All of them,0,,0
-Have you recently changed your workspace location in CIC? If yes do you like this change?,No,0,Yes - I like it,1,Yes - I don't like it,0,,0,,0
-Do you have any question?,Yes,0,No,0,,0,,0,,0
+What kind of refreshment do you prefer in roundtable meetings?,Cake,1,Coffee,0,Fruits,0,All of them,0,,0
+Have you recently changed your workspace location in CIC? If yes do you like this change?,No,0,Yes - I like it,0,Yes - I don't like it,1,,0,,0
+Do you have any question?,Yes,1,No,0,,0,,0,,0
